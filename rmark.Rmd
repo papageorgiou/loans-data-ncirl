@@ -1,0 +1,136 @@
+---
+title: "Untitled"
+author: "ap"
+date: "31 October 2015"
+output: html_document
+---
+
+
+```{r}
+# load the data set
+
+loansData <- read.csv("loansData.csv", header=T, as.is = TRUE)
+
+summary(loansData)
+
+str(loansData)
+
+sapply(loansData[1,], class)
+
+# Basic Exploratory Analysis. 
+
+length(unique(loansData$FICO.Range))
+
+table(loansData$Loan.Length)
+
+table(loansData$Loan.Purpose)
+
+quantile(loansData$Open.CREDIT.Line, na.rm=T)
+
+#table of correlations 
+
+numeric.columns <- names(loansData)[unlist(lapply(loansData,"class")) %in% c("numeric", "integer")]
+dn <- as.matrix(loansData[,numeric.columns])
+cordn <- cor( dn[complete.cases(dn),] ) 
+
+
+
+# convert interest rates to numeric type
+
+loansData$Interest.Rate <- as.numeric(gsub("%$", "", loansData$Interest.Rate))
+
+# get the lower part of the FICO range
+
+loansData$FICO.Range <- as.numeric(as.character(gsub("-...", "", loansData$FICO.Range)))
+
+loansData$Debt.To.Income <- as.numeric(gsub("%$", "", loansData$Debt.To.Income.Ratio))
+
+which(is.na(loansData))
+
+# only keep complete cases. 
+
+loansData <- loansData[complete.cases(loansData), ]
+
+
+# Interest rate vs Loan Length interaction. 
+
+loansData$Loan.Length <- as.numeric(lapply(strsplit(loansData$Loan.Length, split = " "), "[", 1))
+
+plot(loansData$Interest.Rate~loansData$Loan.Length)
+
+cor.test(loansData$Interest.Rate, loansData$Loan.Length)
+
+tapply(loansData$Interest.Rate, loansData$Loan.Length,mean)
+
+tapply(loansData$Interest.Rate, loansData$Loan.Length,sd)
+
+sd(loansData$Interest.Rate)
+mean(loansData$FICO.Range)
+
+summary(lm(loansData$Interest.Rate~loansData$Loan.Length))
+
+
+# Regression Line  ----
+
+loansData$Loan.Length <- as.factor(loansData$Loan.Length)                          
+    
+
+bestline= lm(loansData$Interest.Rate ~ loansData$FICO.Range + loansData$Monthly.Income + loansData$Amount.Requested +loansData$Loan.Length )  
+
+summary(bestline)
+confint(bestline) 
+
+
+# PLOTS Misc ----
+
+# par(mfrow = c(1, 2))
+plot(loansData$FICO.Range, loansData$Interest.Rate, col=as.factor(loansData$Loan.Length),
+     xlab="FICO Score", 
+     ylab="Interest Rate (%)", 
+     main="Interest vs FICO Score by Loan Length" )
+
+abline(73.05044, -0.08467, col="orange")
+
+legend(750, 20, legend=c("34 m", "60 m"), 
+       col=c("black","red"), 
+       pch=c(15,15), 
+       cex=c(0.4, 0.4))
+
+plot(loansData$Interest.Rate ~ as.factor(loansData$Loan.Length), 
+     col = "blue", varwidth = TRUE, 
+     ylab="Interest Rate (%)", xlab="Loan Length (months)",
+     main="Interest Rate distribution by Loan Length")
+
+
+#install.packages("hmisc"); library(Hmisc)
+
+#cut<-cut2(loansData$Amount.Requested,g=3)
+plot(loansData$FICO.Range, loansData$Interest.Rate, col=cut)
+
+plot(lm(loansData$Interest.Rate ~ loansData$FICO.Range))  
+
+plot(loansData$FICO.Range,loansData$Interest.Rate)
+
+hist(loansData$FICO.Range, freq=T)
+
+# Boxplots
+
+plot(loansData$Interest.Rate ~ as.factor(loansData$Loan.Length))
+boxplot(loansData$Interest.Rate ~ as.factor(loansData$FICO.Range))  
+boxplot(loansData$Interest.Rate ~ loansData$Home.Ownership)
+boxplot(loansData$Interest.Rate ~ loansData$Loan.Purpose)
+boxplot(loansData$Interest.Rate ~ loansData$Home.Ownership, notch=TRUE)
+boxplot(loansData$Interest.Rate ~ loansData$Loan.Purpose, notch=TRUE)
+
+
+# Pairwise plot. 
+pairs(cbind(loansData$Amount.Requested, loansData$Interest.Rate, loansData$Monthly.Income, loansData$FICO.Range), gap = 0, panel = panel.smooth)
+
+
+
+
+
+
+```
+
+
